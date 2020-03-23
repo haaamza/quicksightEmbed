@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Basic Embed</title>
+  <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+	<script src="js/amazon-cognito-auth.min.js"></script>
+  <script src="js/amazon-cognito-identity.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="js/config.js"></script>
+
+</head>
+
+<body>
+  <form>
+    <h1>Please sign in</h1>
+
+    <input type="text" id="inputUsername" placeholder="Email address" name="username" required autofocus>
+    <input type="password" id="inputPassword" placeholder="Password" name="password" required>
+    <button type="button" onclick="signInButton()">Sign in</button>
+
+  </form>
+
+  <div>
+    <iframe  id="dashboard" src="" width="1000px" height="1000px"></iframe>
+  </div>
+
+
+  <script>
+  var AccessToken = "";
+
+    function signInButton() {
+      var authenticationData = {
+        Username: document.getElementById("inputUsername").value,
+        Password: document.getElementById("inputPassword").value,
+      };
+
+      var authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(authenticationData);
+      var poolData = {
+        UserPoolId: _config.cognito.userPoolId, // Your user pool id here
+        ClientId: _config.cognito.clientId, // Your client id here
+      };
+
+      var userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+
+      var userData = {
+        Username: document.getElementById("inputUsername").value,
+        Pool: userPool,
+      };
+
+      var cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+
+      cognitoUser.authenticateUser(authenticationDetails, {
+        onSuccess: function(result) {
+          AccessToken = result.getIdToken().getJwtToken();
+          console.log(AccessToken);
+          alert('logged in');
+          $.ajax({
+            url: 'https://6kwa6y45og.execute-api.us-east-1.amazonaws.com/QS',
+            type: 'GET',
+            dataType: "application/json",
+
+            headers: {
+               'Content-Type': 'application/json',
+               "Accept": 'application/json',
+           },
+            data: {idToken: AccessToken}
+          })
+          .done(function(data) {
+
+            console.log(obj.body.message);
+            // $('#dashboard').attr('src', );
+          })
+          .fail(function(data) {
+            console.log(data);
+            var obj = JSON.parse(data.responseText);
+            console.log(obj);
+            $('#dashboard').attr('src', obj.body.message);
+          })
+        },
+
+        onFailure: function(err) {
+          alert(err.stack);
+        },
+      });
+    }
+  </script>
+</body>
